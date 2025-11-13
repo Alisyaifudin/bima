@@ -15,12 +15,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Need full history to check existing tags
+          fetch-depth: 0
+          token: ${{ secrets.AUTO_TAG_TOKEN }}  # Use PAT here
       
       - name: Extract version from Cargo.toml
         id: extract_version
         run: |
-          # Extract version (handles quotes and spaces)
           VERSION=$(grep '^version\s*=\s*"' Cargo.toml | sed -E 's/version\s*=\s*"([^"]+)".*/\1/')
           TAG="v$VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -31,20 +31,18 @@ jobs:
         id: check_tag
         run: |
           if git rev-parse "${{ steps.extract_version.outputs.tag }}" >/dev/null 2>&1; then
-            echo "Tag already exists. Skipping."
             echo "exists=true" >> $GITHUB_OUTPUT
           else
-            echo "Tag does not exist. Will create."
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
       
       - name: Create and push tag
         if: steps.check_tag.outputs.exists == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.AUTO_TAG_TOKEN }}  # Use PAT here too
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
           TAG="${{ steps.extract_version.outputs.tag }}"
           git tag -a "$TAG" -m "Release $TAG"
           git push origin "$TAG"
-          echo "✅ Created and pushed tag: $TAG"
