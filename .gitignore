@@ -12,3 +12,4 @@ target
 **/__pycache__/
 hidden-workflows
 _bima.*
+.env

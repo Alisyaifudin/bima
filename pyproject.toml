@@ -4,7 +4,13 @@ build-backend = "maturin"
 
 [project]
 name = "bima"
-requires-python = ">=3.8"
+description = "N-body simulation powered with Rust backend"
+authors = [
+    { name = "Muhammad Ali Syaifudin", email = "muhammad.ali.syaifudin@hotmail.com" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -18,3 +24,4 @@ python-source = "python"
 # Ensure the Rust module is installed as _bima
 module-name = "bima._bima"
 features = ["pyo3/extension-module"]
+sdist-inclue = ["LICENSE", "README.md"]
