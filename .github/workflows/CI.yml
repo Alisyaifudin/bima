@@ -31,7 +31,7 @@ jobs:
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         env:
-          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"  # Suppress version check
+          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1" # Suppress version check
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --interpreter python3
@@ -75,7 +75,7 @@ jobs:
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v2
         with:
-          subject-path: 'wheels-*/*'
+          subject-path: "wheels-*/*"
       - name: Publish to PyPI
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         uses: PyO3/maturin-action@v1
