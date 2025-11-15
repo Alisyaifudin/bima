@@ -17,6 +17,10 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dynamic = ["version"]
+dependencies = ["numpy>=2.3.4"]
+
+[project.optional-dependencies]
+dev = ["matplotlib", "jupyterlab", "maturin>=1.10,<2.0"]
 
 [tool.maturin]
 # Tell maturin to look for Python code in the python/ directory
