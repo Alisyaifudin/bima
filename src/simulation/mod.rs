@@ -2,8 +2,9 @@ mod utils;
 use crate::core::cm::CM;
 use crate::core::record::{Line, Record};
 use crate::core::system::{Body, System};
-use crate::core::update::update_loop;
+use crate::core::update::{SignalErr, update_loop};
 use crate::initial::Initial;
+use crate::progress_bar::ProgressBar;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
@@ -116,7 +117,9 @@ impl Simulation {
             close_encounter: close,
             save_acc: self.save_acc,
         };
-        update_loop(py, &mut system, t_stop, &mut self.record)?;
+        let signal = || py.check_signals().map_err(|e| SignalErr(e));
+        let mut progress = ProgressBar::new(1000, t_stop);
+        update_loop(signal, &mut progress, &mut system, t_stop, &mut self.record).map_err(|e| e.0)?;
         Ok(())
     }
 }

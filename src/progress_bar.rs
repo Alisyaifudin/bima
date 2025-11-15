@@ -1,4 +1,6 @@
 use tqdm::{Tqdm, pbar};
+
+use crate::core::effect::Effect;
 pub struct ProgressBar {
     total: usize,
     t_stop: f64,
@@ -15,7 +17,10 @@ impl ProgressBar {
             pbar: pbar(Some(total)),
         }
     }
-    pub fn update(&mut self, t: f64) {
+}
+
+impl Effect for ProgressBar {
+    fn update(&mut self, t: f64) {
         let progress = (self.total as f64 * (t / self.t_stop)) as usize;
         let progress = progress.min(self.total);
 
