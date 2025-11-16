@@ -1,4 +1,3 @@
-mod core;
 mod initial;
 mod simulation;
 mod progress_bar;

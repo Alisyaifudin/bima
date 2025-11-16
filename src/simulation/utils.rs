@@ -1,8 +1,8 @@
-use crate::core::close_encounter::CloseEncounter;
-use crate::core::force::ForceMethod;
-use crate::core::solve::SolveMethod;
-use crate::core::timestep::TimestepMethod;
-use crate::core::vec3::Vec3;
+use bima_rs::close_encounter::CloseEncounter;
+use bima_rs::force::ForceMethod;
+use bima_rs::solve::SolveMethod;
+use bima_rs::timestep::TimestepMethod;
+use bima_rs::vec3::Vec3;
 use pyo3::{exceptions::PyValueError, prelude::*};
 
 pub fn some_acc(a: Vec3, saved: bool) -> Option<Vec3> {

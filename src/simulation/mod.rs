@@ -1,10 +1,10 @@
 mod utils;
-use crate::core::cm::CM;
-use crate::core::record::{Line, Record};
-use crate::core::system::{Body, System};
-use crate::core::update::{SignalErr, update_loop};
 use crate::initial::Initial;
 use crate::progress_bar::ProgressBar;
+use bima_rs::cm::CM;
+use bima_rs::record::{Line, Record};
+use bima_rs::system::{Body, System};
+use bima_rs::update::{SignalErr, update_loop};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
@@ -34,8 +34,7 @@ impl Simulation {
         let relative_bodies: Vec<Body> = bodies
             .into_iter()
             .map(|mut body| {
-                body.r -= cm.r;
-                body.v -= cm.v;
+                body.r -= cm.0;
                 return body;
             })
             .collect();
@@ -65,12 +64,12 @@ impl Simulation {
                         if let Some(a) = line.a {
                             vec![
                                 line.t,
-                                line.r.x() + self.cm.r.x(),
-                                line.r.y() + self.cm.r.y(),
-                                line.r.z() + self.cm.r.z(),
-                                line.v.x() + self.cm.r.x(),
-                                line.v.y() + self.cm.r.y(),
-                                line.v.z() + self.cm.r.z(),
+                                line.r.x() + self.cm.0.x(),
+                                line.r.y() + self.cm.0.y(),
+                                line.r.z() + self.cm.0.z(),
+                                line.v.x(),
+                                line.v.y(),
+                                line.v.z(),
                                 a.x(),
                                 a.y(),
                                 a.z(),
@@ -78,12 +77,12 @@ impl Simulation {
                         } else {
                             vec![
                                 line.t,
-                                line.r.x() + self.cm.r.x(),
-                                line.r.y() + self.cm.r.y(),
-                                line.r.z() + self.cm.r.z(),
-                                line.v.x() + self.cm.r.x(),
-                                line.v.y() + self.cm.r.y(),
-                                line.v.z() + self.cm.r.z(),
+                                line.r.x() + self.cm.0.x(),
+                                line.r.y() + self.cm.0.y(),
+                                line.r.z() + self.cm.0.z(),
+                                line.v.x(),
+                                line.v.y(),
+                                line.v.z(),
                             ]
                         }
                     })
@@ -118,8 +117,9 @@ impl Simulation {
             save_acc: self.save_acc,
         };
         let signal = || py.check_signals().map_err(|e| SignalErr(e));
-        let mut progress = ProgressBar::new(1000, t_stop);
-        update_loop(signal, &mut progress, &mut system, t_stop, &mut self.record).map_err(|e| e.0)?;
+        let mut progress = ProgressBar::new(py, 60, t_stop)?;
+        update_loop(signal, &mut progress, &mut system, t_stop, &mut self.record)
+            .map_err(|e| e.0)?;
         Ok(())
     }
 }

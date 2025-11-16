@@ -13,3 +13,4 @@ target
 hidden-workflows
 _bima.*
 .env
+**/.ipynb_checkpoints

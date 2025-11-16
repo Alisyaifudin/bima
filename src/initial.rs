@@ -1,6 +1,5 @@
 use pyo3::{exceptions::PyValueError, prelude::*};
-
-use crate::core::vec3::Vec3;
+use bima_rs::vec3::Vec3;
 
 #[pyclass]
 #[derive(Debug)]
