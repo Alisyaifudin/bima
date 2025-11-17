@@ -14,18 +14,16 @@ class Config:
     solve: SolveMethod
     timestep: TimestepMethodType
     close_encounter: CloseEncounterMethodType
+    save_acceleration: bool = False
 
 
 class Simulation:
-    def __init__(self, initial: Initial, save_acceleration=False) -> None:
+    def __init__(self, initial: Initial) -> None:
         self.initial = initial
-        self._sim = _bima.Simulation(initial._initial, save_acceleration)
+        self._sim = _bima.Simulation(initial._initial)
 
-    def run(self, config: Config, t_stop: float):
+    def run_memory(self, config: Config, t_stop: float) -> list[list[list[float]]]:
         if t_stop <= 0:
             raise ValueError("t_stop must be positive")
-        self._sim.run(config.force, config.solve, config.timestep.value, config.close_encounter.value,
-                      t_stop, config.timestep.delta_t, config.close_encounter.par)
-
-    def record(self):
-        return self._sim.record
+        return self._sim.run_memory(config.force, config.solve, config.timestep.value, config.close_encounter.value,
+                                    t_stop, config.timestep.delta_t, config.close_encounter.par, config.save_acceleration)

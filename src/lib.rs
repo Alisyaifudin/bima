@@ -1,6 +1,6 @@
 mod initial;
 mod simulation;
-mod progress_bar;
+mod effect;
 use initial::set_initial;
 use pyo3::prelude::*;
 
