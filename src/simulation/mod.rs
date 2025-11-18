@@ -69,7 +69,7 @@ impl Simulation {
         update_loop(&mut effect, &mut system, t_stop, &mut record)?;
         Ok(effect.record.to_vec(&self.cm))
     }
-    #[pyo3(signature = (abs_path, force_method, solve_method, timestep_method, close_encounter, t_stop, delta_t=None, ce_par=None, save_acc=None, redo=None))]
+    #[pyo3(signature = (abs_path, force_method, solve_method, timestep_method, close_encounter, t_stop, delta_t=None, ce_par=None, save_acc=None, replace=None))]
     fn run_disk<'py>(
         &mut self,
         py: Python<'py>,
@@ -82,10 +82,10 @@ impl Simulation {
         delta_t: Option<f64>,
         ce_par: Option<f64>,
         save_acc: Option<bool>,
-        redo: Option<bool>,
+        replace: Option<bool>,
     ) -> PyResult<String> {
         let save_acc = save_acc.unwrap_or(false);
-        let redo = redo.unwrap_or(false);
+        let replace = replace.unwrap_or(false);
         let mut record = Record::new(&self.bodies, save_acc);
         let mut system = create_system(
             &self.bodies,
@@ -96,7 +96,7 @@ impl Simulation {
             delta_t,
             ce_par,
         )?;
-        let mut effect = InDisk::new(py, t_stop, abs_path, redo, &record, &self.cm)?;
+        let mut effect = InDisk::new(py, t_stop, abs_path, replace, &record, &self.cm)?;
         update_loop(&mut effect, &mut system, t_stop, &mut record)?;
         Ok(effect.get_path())
     }

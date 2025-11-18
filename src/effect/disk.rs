@@ -54,7 +54,7 @@ impl<'py> InDisk<'py> {
         py: Python<'py>,
         t_stop: f64,
         abs_path: &str,
-        redo: bool,
+        replace: bool,
         record: &Record,
         cm: &'py CM,
     ) -> PyResult<Self> {
@@ -63,7 +63,7 @@ impl<'py> InDisk<'py> {
         let dir_path = gen_dir_path(abs_path)?;
         let dir_path = fs::canonicalize(dir_path)?;
         let file_path = dir_path.join("res.h5");
-        let store = Store::new(file_path, record.len(), redo, record.save_acc)?;
+        let store = Store::new(file_path, record.len(), replace, record.save_acc)?;
         Ok(InDisk {
             progress_bar,
             py,
@@ -92,7 +92,7 @@ impl<'py> Effect<PyErr> for InDisk<'py> {
         let should_store = match res {
             UpdateState::Done => true,
             UpdateState::Nothing => false,
-            UpdateState::Print(it) => it > 1000,
+            UpdateState::Print(it) => it > 10,
         };
         if should_store {
             self.store(record)?;

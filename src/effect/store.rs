@@ -35,14 +35,14 @@ impl Store {
     pub fn new(
         path: PathBuf,
         n_objects: usize,
-        redo: bool,
+        replace: bool,
         save_acc: bool,
     ) -> Result<Self, StoreErr> {
-        let file = File::create(&path)?;
         let metadata = metadata(&path).expect("Already check above, so must exist");
-        if !redo && metadata.is_file() {
+        if !replace && metadata.is_file() {
             return Err(StoreErr::AlreadyExists);
         }
+        let file = File::create(&path)?;
         for obj_id in 0..n_objects {
             let obj_group = file.create_group(&format!("objects/{}", obj_id))?;
             obj_group.create_group("t")?;
@@ -65,39 +65,42 @@ impl Store {
         })
     }
     pub fn append(&mut self, obj_id: usize, lines: Vec<Line>, cm: &CM) -> hdf5::Result<()> {
-        let chunck_id = self.counters[obj_id];
-        self.counters[obj_id] += 1;
-        let (t, x, y, z, vx, vy, vz, ax, ay, az) = unpack(lines, &cm);
-        let obj_g = self.file.group(&format!("objects/{}", obj_id))?;
-        store_dataset(&obj_g, "t", chunck_id, t)?;
-        store_dataset(&obj_g, "x", chunck_id, x)?;
-        store_dataset(&obj_g, "y", chunck_id, y)?;
-        store_dataset(&obj_g, "z", chunck_id, z)?;
-        store_dataset(&obj_g, "vx", chunck_id, vx)?;
-        store_dataset(&obj_g, "vy", chunck_id, vy)?;
-        store_dataset(&obj_g, "vz", chunck_id, vz)?;
-        if let Some(a) = ax {
-            store_dataset(&obj_g, "ax", chunck_id, a)?;
-        }
-        if let Some(a) = ay {
-            store_dataset(&obj_g, "ay", chunck_id, a)?;
-        }
-        if let Some(a) = az {
-            store_dataset(&obj_g, "az", chunck_id, a)?;
+        for chunk in lines.chunks(65536) {
+            let chunk_id = self.counters[obj_id];
+            let (t, x, y, z, vx, vy, vz, ax, ay, az) = unpack(chunk, &cm);
+            let obj_g = self.file.group(&format!("objects/{}", obj_id))?;
+            store_dataset(&obj_g, "t", chunk_id, t)?;
+            store_dataset(&obj_g, "x", chunk_id, x)?;
+            store_dataset(&obj_g, "y", chunk_id, y)?;
+            store_dataset(&obj_g, "z", chunk_id, z)?;
+            store_dataset(&obj_g, "vx", chunk_id, vx)?;
+            store_dataset(&obj_g, "vy", chunk_id, vy)?;
+            store_dataset(&obj_g, "vz", chunk_id, vz)?;
+            if let Some(a) = ax {
+                store_dataset(&obj_g, "ax", chunk_id, a)?;
+            }
+            if let Some(a) = ay {
+                store_dataset(&obj_g, "ay", chunk_id, a)?;
+            }
+            if let Some(a) = az {
+                store_dataset(&obj_g, "az", chunk_id, a)?;
+            }
+            self.counters[obj_id] += 1;
         }
         Ok(())
     }
 }
 
-fn store_dataset(obj_g: &Group, name: &str, chunck_id: usize, value: Vec<f64>) -> hdf5::Result<()> {
+fn store_dataset(obj_g: &Group, name: &str, chunk_id: usize, value: Vec<f64>) -> hdf5::Result<()> {
     let item = obj_g.group(name)?;
     item.new_dataset::<f64>()
-        .create(chunck_id.to_string().as_str())?
+        .shape(value.len())
+        .create(format!("{:0>10}", chunk_id).as_str())?
         .write(value.as_slice())
 }
 
 fn unpack(
-    lines: Vec<Line>,
+    lines: &[Line],
     cm: &CM,
 ) -> (
     Vec<f64>,

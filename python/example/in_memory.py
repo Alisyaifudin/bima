@@ -3,8 +3,7 @@ import bima
 from matplotlib import pyplot as plt
 from bima import Config
 
-arr = np.array([[1, -0.5, 0, 0, 0, -0.5 * 1.5, 0],
-               [1.5, 0.5, 0, 0, 0, 0.5, 0]])
+arr = np.array([[1, -1, 0, 0, 0, -1, 0], [2, 0.5, 0, 0, 0, 0.5, 0]])
 initial = bima.Initial.from_arr(arr)
 
 config = Config(
@@ -16,13 +15,13 @@ config = Config(
 
 sim = bima.Simulation(initial)
 
-record = sim.run_memory(config, 3)
+record = sim.in_memory.run(config, 20)
 
 record = np.array(record)
 print(record.shape)
 
 length = record.shape[1]
-sample_n = 100
+sample_n = 1000
 skip = length//sample_n
 
 x1 = record[0, ::skip, 1]

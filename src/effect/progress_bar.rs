@@ -11,12 +11,13 @@ pub struct ProgressBar<W: Wrt> {
     t_stop: f64,
     t: SystemTime,
     it: usize,
+    total_it: usize,
     current: usize,
     writer: W,
 }
 
 fn print_bar_start<'py, W: Wrt>(wrt: &W, total: usize) -> PyResult<()> {
-    let progress_str = format!("\r[{}] 0% [??? it/s]", " ".repeat(total));
+    let progress_str = format!("\r[{}] 0% (0) [??? it/s]", " ".repeat(total));
     wrt.write(&progress_str)?;
     Ok(())
 }
@@ -26,14 +27,16 @@ fn print_bar<'py, W: Wrt>(
     total: usize,
     current: usize,
     it: usize,
+    total_it: usize,
     delta_ms: u128,
 ) -> PyResult<()> {
     let speed = calc_speed(it, delta_ms);
     let progress_str = format!(
-        "\r[{}{}] {:.2}% [{speed} it/s]",
+        "\r[{}{}] {:.2}% ({}) [{speed} it/s]",
         "#".repeat(current),
         " ".repeat(total - current),
-        percent.min(1.) * 100.0
+        percent.min(1.) * 100.0,
+        total_it,
     );
     wrt.write(&progress_str)?;
     Ok(())
@@ -54,6 +57,7 @@ impl<W: Wrt> ProgressBar<W> {
             total,
             current: 0,
             it: 0,
+            total_it: 0,
             t: SystemTime::now(),
             t_stop,
             writer,
@@ -78,12 +82,14 @@ impl<W: Wrt> ProgressBar<W> {
         let percent = t / self.t_stop;
         self.current = (percent * self.total as f64) as usize;
         if delta_ms > 100 {
+            self.total_it += self.it;
             print_bar(
                 &self.writer,
                 percent,
                 self.total,
                 self.current,
                 self.it,
+                self.total_it,
                 delta_ms,
             )
             .unwrap();
@@ -93,12 +99,14 @@ impl<W: Wrt> ProgressBar<W> {
         }
 
         if self.current >= self.total {
+            self.total_it += self.it;
             print_bar(
                 &self.writer,
                 percent,
                 self.total,
                 self.current,
                 self.it,
+                self.total_it,
                 delta_ms,
             )?;
             println!();
