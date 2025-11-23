@@ -9,7 +9,7 @@ initial = bima.Initial.from_arr(arr)
 
 config = Config(
     force=bima.ForceMethod.Direct,
-    integrator=bima.SolveMethod.Euler,
+    integrator=bima.Integrator.Euler,
     timestep=bima.TimestepMethod.Constant(0.00001),
     close_encounter=bima.CloseEncounterMethod.Regularized,
 )
