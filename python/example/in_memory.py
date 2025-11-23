@@ -1,37 +1,57 @@
+from bima.body import Body
+from bima import Config
 import numpy as np
 import bima
 from matplotlib import pyplot as plt
-from bima import Config
 
-arr = np.array([[1, -1, 0, 0, 0, -1, 0], [2, 0.5, 0, 0, 0, 0.5, 0]])
+v = np.sqrt(2)
+arr = np.array([[1, -1, 0, 0, 0, -2/3 * v, 0], [2, 0.5, 0, 0, 0, 1/3 * v, 0]])
 initial = bima.Initial.from_arr(arr)
 
 config = Config(
     force=bima.ForceMethod.Direct,
-    solve=bima.SolveMethod.Euler,
-    timestep=bima.TimestepMethod.Constant(0.00001),
+    # integrator=bima.Integrator.Euler,
+    integrator=bima.Integrator.LeapFrog,
+    timestep=bima.TimestepMethod.Constant(0.1),
+    # timestep=bima.TimestepMethod.Constant(1),
     close_encounter=bima.CloseEncounterMethod.Regularized,
 )
 
 sim = bima.Simulation(initial)
 
-record = sim.in_memory.run(config, 20)
+bodies = sim.in_memory.run(config, 100)
+# bodies = sim.in_memory.run(config, 1)
 
-record = np.array(record)
-print(record.shape)
+# print(len(energy.t))
 
-length = record.shape[1]
-sample_n = 1000
-skip = length//sample_n
 
-x1 = record[0, ::skip, 1]
-y1 = record[0, ::skip, 2]
-x2 = record[1, ::skip, 1]
-y2 = record[1, ::skip, 2]
+def plot(bodies: list[Body]):
+    body0 = bodies[0]
+    length = len(body0)
+    sample_n = np.min([1000, length])
+    skip = length//sample_n
+    x0 = body0.x[::skip]
+    y0 = body0.y[::skip]
 
-fig, ax = plt.subplots()
-ax.plot(x1, y1)
-ax.scatter(x1[-1], y1[-1])
-ax.plot(x2, y2)
-ax.scatter(x2[-1], y2[-1])
+    body1 = bodies[1]
+    length = len(body1)
+    skip = length//sample_n
+    x1 = body1.x[::skip]
+    y1 = body1.y[::skip]
+
+    fig, ax = plt.subplots()
+    ax.plot(x0, y0)
+    ax.scatter(x0[-1], y0[-1])
+    ax.plot(x1, y1)
+    ax.scatter(x1[-1], y1[-1])
+    ax.set_aspect("equal")
+    plt.show()
+
+
+# plot(bodies)
+
+
+energy = bima.Energy.from_bodies(bodies)
+e0 = energy.e[0]
+plt.plot(energy.t, (e0-energy.e)/e0)
 plt.show()

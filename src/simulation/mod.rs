@@ -1,13 +1,14 @@
+mod in_disk;
+mod in_memory;
+mod store;
 mod utils;
-use crate::effect::disk::InDisk;
-use crate::effect::memory::InMemory;
 use crate::initial::Initial;
+use bima_rs::body::Body;
 use bima_rs::cm::CM;
-use bima_rs::record::Record;
-use bima_rs::system::{Body, System};
-use bima_rs::update::update_loop;
+use bima_rs::system::System;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
+use std::collections::HashMap;
 
 #[pyclass]
 pub struct Simulation {
@@ -22,9 +23,10 @@ impl Simulation {
     fn new(initial: Vec<Bound<'_, Initial>>) -> PyResult<Self> {
         let bodies = initial
             .iter()
-            .map(|obj| {
+            .enumerate()
+            .map(|(i, obj)| {
                 let initial = obj.borrow();
-                Body::new(initial.m, initial.r, initial.v)
+                Body::new(i, initial.m, initial.r, initial.v, None)
             })
             .collect::<Vec<Body>>();
         let cm =
@@ -41,12 +43,12 @@ impl Simulation {
             bodies: relative_bodies,
         })
     }
-    #[pyo3(signature = (force_method, solve_method, timestep_method, close_encounter, t_stop, delta_t=None, ce_par=None, save_acc=None))]
+    #[pyo3(signature = (force_method, integrator, timestep_method, close_encounter, t_stop, delta_t=None, ce_par=None, save_acc=None))]
     fn run_memory<'py>(
-        &mut self,
+        &self,
         py: Python<'py>,
         force_method: u8,
-        solve_method: u8,
+        integrator: u8,
         timestep_method: u8,
         close_encounter: u8,
         t_stop: f64,
@@ -54,28 +56,26 @@ impl Simulation {
         ce_par: Option<f64>,
         save_acc: Option<bool>,
     ) -> PyResult<Vec<Vec<Vec<f64>>>> {
-        let save_acc = save_acc.unwrap_or(false);
-        let mut record = Record::new(&self.bodies, save_acc);
-        let mut system = create_system(
-            &self.bodies,
+        in_memory::call(
+            &self,
+            py,
             force_method,
-            solve_method,
+            integrator,
             timestep_method,
             close_encounter,
+            t_stop,
             delta_t,
             ce_par,
-        )?;
-        let mut effect = InMemory::new(py, t_stop, &record)?;
-        update_loop(&mut effect, &mut system, t_stop, &mut record)?;
-        Ok(effect.record.to_vec(&self.cm))
+            save_acc,
+        )
     }
-    #[pyo3(signature = (abs_path, force_method, solve_method, timestep_method, close_encounter, t_stop, delta_t=None, ce_par=None, save_acc=None, replace=None))]
+    #[pyo3(signature = (abs_path, force_method, integrator, timestep_method, close_encounter, t_stop, delta_t=None, ce_par=None, save_acc=None, replace=None))]
     fn run_disk<'py>(
-        &mut self,
+        &self,
         py: Python<'py>,
         abs_path: &str,
         force_method: u8,
-        solve_method: u8,
+        integrator: u8,
         timestep_method: u8,
         close_encounter: u8,
         t_stop: f64,
@@ -84,43 +84,43 @@ impl Simulation {
         save_acc: Option<bool>,
         replace: Option<bool>,
     ) -> PyResult<String> {
-        let save_acc = save_acc.unwrap_or(false);
-        let replace = replace.unwrap_or(false);
-        let mut record = Record::new(&self.bodies, save_acc);
-        let mut system = create_system(
-            &self.bodies,
+        in_disk::call(
+            self,
+            py,
+            abs_path,
             force_method,
-            solve_method,
+            integrator,
             timestep_method,
             close_encounter,
+            t_stop,
             delta_t,
             ce_par,
-        )?;
-        let mut effect = InDisk::new(py, t_stop, abs_path, replace, &record, &self.cm)?;
-        update_loop(&mut effect, &mut system, t_stop, &mut record)?;
-        Ok(effect.get_path())
+            save_acc,
+            replace,
+        )
     }
 }
 
 fn create_system(
     bodies: &Vec<Body>,
     force_method: u8,
-    solve_method: u8,
+    integrator: u8,
     timestep_method: u8,
     close_encounter: u8,
     delta_t: Option<f64>,
     ce_par: Option<f64>,
 ) -> PyResult<System> {
-    let force = utils::get_force(force_method)?;
-    let solve = utils::get_solve(solve_method)?;
-    let timestep = utils::get_timestep(timestep_method, delta_t)?;
-    let close = utils::get_close(close_encounter, ce_par)?;
+    let force_method = utils::get_force(force_method)?;
+    let integrator = utils::get_integrator(integrator)?;
+    let timestep_method = utils::get_timestep(timestep_method, delta_t)?;
+    let close_encounter = utils::get_close(close_encounter, ce_par)?;
     Ok(System {
         t: 0.0,
         bodies: bodies.clone(),
-        force_method: force,
-        solve_method: solve,
-        timestep_method: timestep,
-        close_encounter: close,
+        force_method,
+        integrator,
+        timestep_method,
+        close_encounter,
+        cache: HashMap::new(),
     })
 }

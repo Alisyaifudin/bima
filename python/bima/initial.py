@@ -1,5 +1,4 @@
 from typing import Self
-from attr import dataclass
 from numpy.typing import NDArray
 import numpy as np
 from bima import _bima
@@ -8,9 +7,9 @@ from bima import _bima
 class Initial:
     _initial: list[_bima.Initial]
 
-    def __init__(self, _initial) -> None:
+    def __init__(self, _initial, m: list[float]) -> None:
         self._initial = _initial
-
+        self.m = m
     @classmethod
     def from_arr(cls, data: NDArray[np.float64]) -> Self:
         """
@@ -36,7 +35,7 @@ class Initial:
         vy = data[:, 5].tolist()
         vz = data[:, 6].tolist()
 
-        initial = cls(_bima.set_initial(m, x, y, z, vx, vy, vz))
+        initial = cls(_bima.set_initial(m, x, y, z, vx, vy, vz), m)
         return initial
 
     def __repr__(self) -> str:

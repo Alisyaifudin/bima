@@ -1,12 +1,14 @@
 from typing import Optional
+from bima.body import Body
 import numpy as np
 from numpy.typing import NDArray
 import h5py
 
 
-class Body:
+class BodyLazy:
     def __init__(self, group: h5py.Group):
         self.group = group
+        self.m: float = group["m"][0]
         self.cache: dict[str, Optional[NDArray[np.float64]]] = dict(
             t=None, x=None, y=None, z=None, vx=None, vy=None, vz=None, ax=None, ay=None, az=None)
 
@@ -88,7 +90,7 @@ class DiskFile:
         # Return False to let exceptions propagate
         return False
 
-    def get(self, i: int) -> Body:
+    def get(self, i: int) -> BodyLazy:
         if self.file is None:
             raise ValueError("No file")
         if i < 0:
@@ -97,7 +99,8 @@ class DiskFile:
             raise ValueError(
                 f"index cannot be larger than the total member: {self.n}")
         bodies = self.file['objects']
-        return Body(bodies[f"{i}"])
+        return  BodyLazy(bodies[f"{i}"])
+        
 
 
 class Disk:

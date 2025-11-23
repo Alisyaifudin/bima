@@ -9,15 +9,15 @@ initial = bima.Initial.from_arr(arr)
 
 config = Config(
     force=bima.ForceMethod.Direct,
-    solve=bima.SolveMethod.Euler,
+    integrator=bima.SolveMethod.Euler,
     timestep=bima.TimestepMethod.Constant(0.00001),
     close_encounter=bima.CloseEncounterMethod.Regularized,
 )
 
 sim = bima.Simulation(initial)
 
-record = sim.in_disk(".", replace=True).run(config, 3)
-print(record)
+file = sim.in_disk(".", replace=True).run(config, 3)
+print(file)
 
 # record = np.array(record)
 # print(record.shape)

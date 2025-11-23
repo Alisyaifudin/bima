@@ -104,7 +104,7 @@ impl<W: Wrt> ProgressBar<W> {
                 &self.writer,
                 percent,
                 self.total,
-                self.current,
+                self.total,
                 self.it,
                 self.total_it,
                 delta_ms,

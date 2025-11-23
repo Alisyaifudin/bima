@@ -1,5 +1,5 @@
 use bima_rs::cm::CM;
-use bima_rs::record::Line;
+use bima_rs::record::line::Line;
 use hdf5::{self, File, Group};
 use pyo3::{PyErr, exceptions::PyValueError};
 use std::fs::metadata;
@@ -35,16 +35,23 @@ impl Store {
     pub fn new(
         path: PathBuf,
         n_objects: usize,
+        m: Vec<f64>,
         replace: bool,
         save_acc: bool,
     ) -> Result<Self, StoreErr> {
-        let metadata = metadata(&path).expect("Already check above, so must exist");
-        if !replace && metadata.is_file() {
-            return Err(StoreErr::AlreadyExists);
+        if let Ok(metadata) = metadata(&path) {
+            if !replace && metadata.is_file() {
+                return Err(StoreErr::AlreadyExists);
+            }
         }
         let file = File::create(&path)?;
         for obj_id in 0..n_objects {
             let obj_group = file.create_group(&format!("objects/{}", obj_id))?;
+            obj_group
+                .new_dataset::<f64>()
+                .shape(1)
+                .create("m")?
+                .write(&[m[obj_id]])?;
             obj_group.create_group("t")?;
             obj_group.create_group("x")?;
             obj_group.create_group("y")?;

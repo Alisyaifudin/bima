@@ -1,6 +1,6 @@
 [package]
 name = "bima"
-version = "0.4.1"
+version = "0.6.0"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -11,4 +11,6 @@ crate-type = ["cdylib"]
 [dependencies]
 bima-rs = { path = "../bima-rs" }
 pyo3 = { version = "0.23", features = ["extension-module"] }
+numpy = "0.23"
 hdf5 = "0.8.1"
+may = "0.3.51"

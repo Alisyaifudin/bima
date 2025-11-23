@@ -1,10 +1,8 @@
 use bima_rs::close_encounter::CloseEncounter;
 use bima_rs::force::ForceMethod;
-use bima_rs::solve::SolveMethod;
+use bima_rs::integrator::Integrator;
 use bima_rs::timestep::TimestepMethod;
 use pyo3::{exceptions::PyValueError, prelude::*};
-
-
 
 pub struct ForceMethodErr;
 
@@ -20,17 +18,19 @@ pub fn get_force(force_method: u8) -> Result<ForceMethod, ForceMethodErr> {
         _ => Err(ForceMethodErr),
     }
 }
-pub struct SolveMethodErr;
-impl From<SolveMethodErr> for PyErr {
-    fn from(_: SolveMethodErr) -> Self {
+pub struct IntegratorErr;
+impl From<IntegratorErr> for PyErr {
+    fn from(_: IntegratorErr) -> Self {
         PyValueError::new_err("Invalid input")
     }
 }
-pub fn get_solve(solve_method: u8) -> Result<SolveMethod, SolveMethodErr> {
-    match solve_method {
-        0 => Ok(SolveMethod::Euler),
-        1 => Ok(SolveMethod::RK4),
-        _ => Err(SolveMethodErr),
+pub fn get_integrator(integrator: u8) -> Result<Integrator, IntegratorErr> {
+    match integrator {
+        0 => Ok(Integrator::Euler),
+        1 => Ok(Integrator::RK4),
+        2 => Ok(Integrator::BS),
+        3 => Ok(Integrator::new_leap_frog()),
+        _ => Err(IntegratorErr),
     }
 }
 pub enum TimestepMethodErr {

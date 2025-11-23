@@ -1,5 +1,5 @@
+use crate::progress_bar::Wrt;
 use pyo3::prelude::*;
-use crate::effect::progress_bar::Wrt;
 
 pub struct PyStdout<'py> {
     stdout: Bound<'py, PyAny>,
