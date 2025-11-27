@@ -1,34 +1,26 @@
-import numpy as np
-from numpy.typing import NDArray
 
 class Body:
-    def __init__(self, v: list[list[float]], id: int, m: float):
-        self.id = id
-        self.m = m
-        arr = np.array(v)
-        shape = arr.shape
-        self.t = arr[:,0]
-        self.x = arr[:,1]
-        self.y = arr[:,2]
-        self.z = arr[:,3]
-        self.vx = arr[:,4]
-        self.vy = arr[:,5]
-        self.vz = arr[:,6]
-        if shape[1] > 7:
-          self.ax = arr[:,7]
-          self.ay = arr[:,8]
-          self.az = arr[:,9]
-        else:
-          self.ax = None
-          self.ay = None
-          self.az = None
+    def __init__(self, w: list[float], active: bool = True):
+        if len(w) != 7:
+            raise ValueError("w should be of size 7")
+        self.m = w[0]
+        self.x = w[1]
+        self.y = w[2]
+        self.z = w[3]
+        self.vx = w[4]
+        self.vy = w[5]
+        self.vz = w[6]
+        self.active = active
 
-    def __len__(self):
-        return len(self.t)
+    @classmethod
+    def from_vec(cls, m: float, r: list[float], v: list[float], active: bool = True):
+        if (len(r) != 3 and len(v) != 3):
+            raise ValueError("Invalid vec size")
+        w = [m, r[0], r[1], r[2], v[0], v[1], v[2]]
+        return cls(w, active)
 
     def __repr__(self) -> str:
-        return f"Body(id={self.id})"
+        return f"body(m={self.m}, r=[{self.x}, {self.y}, {self.z}], v=[{self.vx}, {self.vy}, {self.vz}])"
 
     def __str__(self) -> str:
         return self.__repr__()
-       

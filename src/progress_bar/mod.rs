@@ -1,6 +1,8 @@
 use pyo3::prelude::*;
 use std::time::Instant;
 use std::u64;
+
+use crate::progress_bar::py_stdout::PyStdout;
 pub mod py_stdout;
 
 pub trait Wrt {
@@ -21,12 +23,12 @@ fn print_bar_start<'py, W: Wrt>(wrt: &W, length: usize) -> PyResult<()> {
 }
 fn print_bar<'py, W: Wrt>(
     wrt: &W,
-    percentage: f64,
+    percentage: f32,
     length: usize,
     total_iteration: usize,
     speed: u64,
 ) -> PyResult<()> {
-    let current = (percentage * length as f64) as usize;
+    let current = (percentage * length as f32) as usize;
     let progress_str = format!(
         "\r[{}{}] {:.2}% ({total_iteration}) [{speed} it/s]",
         "#".repeat(current),
@@ -45,8 +47,9 @@ fn calc_speed(num_iteration: usize, delta_ms: u128) -> u64 {
     }
 }
 
-impl<W: Wrt> ProgressBar<W> {
-    pub fn new(writer: W, length: usize) -> PyResult<Self> {
+impl<'py> ProgressBar<PyStdout<'py>> {
+    pub fn from_py(py: &Python<'py>, length: usize) -> PyResult<Self> {
+        let writer = PyStdout::new(&py)?;
         print_bar_start(&writer, length)?;
         Ok(ProgressBar {
             length,
@@ -58,10 +61,14 @@ impl<W: Wrt> ProgressBar<W> {
 }
 
 impl<W: Wrt> ProgressBar<W> {
-    pub fn update(&mut self, iteration: usize, percentage: f64) -> Result<(), PyErr> {
+    pub fn update(&mut self, iteration: usize, percentage: f32) -> Result<(), PyErr> {
+        if iteration < self.last_iteration {
+            return Ok(());
+        }
         let now = Instant::now();
         let delta_ms = now.duration_since(self.last_time).as_millis();
-        let speed = calc_speed(iteration - self.last_iteration, delta_ms);
+        let delta = iteration - self.last_iteration;
+        let speed = calc_speed(delta, delta_ms);
         self.last_iteration = iteration;
         self.last_time = now;
         print_bar(&self.writer, percentage, self.length, iteration, speed)?;

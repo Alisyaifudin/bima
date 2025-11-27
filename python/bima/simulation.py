@@ -1,58 +1,53 @@
 from bima.body import Body
-from bima.disk import Disk
-from bima.method.close_encounter import CloseEncounterMethodType
-from bima.method.force import ForceMethod
+from bima.trajectory import Trajectory
 from bima.method.integrator import Integrator
-from bima.method.timestep import TimestepMethodType
+from bima.method.force import Force
 from bima import _bima
-from bima.initial import Initial
-from dataclasses import dataclass
 
+# @dataclass
+# class Config:
+#     force: ForceMethod
+#     integrator: Integrator
+#     timestep: TimestepMethodType
+#     close_encounter: CloseEncounterMethodType
+#     save_acceleration: bool = False
 
-@dataclass
-class Config:
-    force: ForceMethod
-    integrator: Integrator
-    timestep: TimestepMethodType
-    close_encounter: CloseEncounterMethodType
-    save_acceleration: bool = False
+sims = {
+    (0, 0): _bima.Direct_Euler,
+    (0, 1): _bima.Direct_Rk4,
+    (0, 2): _bima.Direct_Bs,
+    (0, 3): _bima.Direct_LeapFrog,
+}
 
 
 class Simulation:
-    def __init__(self, initial: Initial) -> None:
-        self.initial = initial
-        self._sim = _bima.Simulation(initial._initial)
-        self.in_memory = InMemory(self)
+    def __init__(self, integrator: Integrator, force: Force) -> None:
+        self.integrator = integrator
+        self.force = force
+        try:
+            sim = sims[(force.id, integrator.id)]
+            self.sim = sim(integrator.v, force.v)
+        except KeyError as e:
+            raise KeyError(
+                f"The integrator and/or force selected are not available\n {e}")
 
-    def in_disk(self, dir_path: str, replace=False):
-        return InDisk(self, dir_path, replace)
-
-
-class InMemory:
-    def __init__(self, simulation: Simulation):
-        self.simulation = simulation
-
-    def run(self, config: Config, t_stop: float) -> list[Body]:
-        if t_stop <= 0:
-            raise ValueError("t_stop must be positive")
-        record: list[list[list[float]]] = self.simulation._sim.run_memory(config.force, config.integrator, config.timestep.value, config.close_encounter.value,
-                                                                          t_stop, config.timestep.delta_t, config.close_encounter.par, config.save_acceleration)
-        # print("raw\n", record[0])
-        bodies: list[Body] = []
+    def run(self, bodies: list[Body], t_stop: float, n_active: float | None = None,
+            save_acc=False, progress=False):
+        n_active = len(bodies) if n_active is None else n_active
+        body_list = to_list(bodies)
+        record: list[list[list[float]]] = self.sim.run(
+            body_list, n_active, t_stop, save_acc, progress)
+        b: list[Trajectory] = []
+        b.clear()
         for i, body in enumerate(record):
-            bodies.append(Body(body, i, self.simulation.initial.m[i]))
-        return bodies
+            m = bodies[i].m
+            b.append(Trajectory(body, i, m))
+        return b
 
 
-class InDisk:
-    def __init__(self, simulation: Simulation, dir_path: str, replace=False):
-        self.simulation = simulation
-        self.dir_path = dir_path
-        self.replace = replace
-
-    def run(self, config: Config, t_stop: float) -> Disk:
-        if t_stop <= 0:
-            raise ValueError("t_stop must be positive")
-        path = self.simulation._sim.run_disk(self.dir_path, config.force, config.integrator, config.timestep.value, config.close_encounter.value,
-                                             t_stop, config.timestep.delta_t, config.close_encounter.par, config.save_acceleration, self.replace)
-        return Disk(path)
+def to_list(bodies: list[Body]) -> list[list[float]]:
+    b = []
+    for body in bodies:
+        arr = [body.m, body.x, body.y, body.z, body.vx, body.vy, body.z]
+        b.append(arr)
+    return b

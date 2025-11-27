@@ -2,6 +2,8 @@
 name = "bima"
 version = "0.6.6"
 edition = "2024"
+repository = "https://github.com/Alisyaifudin/bima"
+authors = ["Muhammad Ali Syaifudin"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
@@ -9,8 +11,7 @@ name = "_bima"
 crate-type = ["cdylib"]
 
 [dependencies]
-bima-rs = "0.2.0"
+bima-rs = { path = "../bima-rs" }
 pyo3 = { version = "0.23", features = ["extension-module"] }
 numpy = "0.23"
-hdf5 = "0.8.1"
-may = "0.3.51"
+paste = "1.0.15"

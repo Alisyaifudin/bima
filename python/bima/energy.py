@@ -1,4 +1,4 @@
-from bima.body import Body
+from bima.trajectory import Trajectory
 from bima import _bima
 from numpy.typing import NDArray
 import numpy as np
@@ -10,7 +10,9 @@ class Energy:
         self.e = e
 
     @classmethod
-    def from_bodies(cls, bodies: list[Body]):
+    def from_bodies(cls, bodies: list[Trajectory], n_active: int | None = None, progress=False):
+        if n_active is None or n_active > len(bodies):
+            n_active = len(bodies)
         objects = []
         masses = []
         for body in bodies:
@@ -26,6 +28,10 @@ class Energy:
                 object.append([t, x, y, z, vx, vy, vz])
             objects.append(object)
             masses.append(body.m)
-        energy = _bima.calc_energy(objects, masses)
+        energy = _bima.calc_energy(objects, masses, n_active, progress)
         ins = cls(energy[0], energy[1])
         return ins
+
+    def __repr__(self) -> str:
+        list = np.array([[t, e] for e, t in zip(self.e, self.t)])
+        return str(list)
